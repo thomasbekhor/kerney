@@ -270,9 +270,12 @@ def main(developer=False, visitas_duplas=False, nivel_reposicao=None,
     
     # 6) Cálculo base por item (cada linha é um SKU/insumo do patrimônio)
     visitas_df = consumo_med_df.copy()
-    
+
+    print(consumo_med_df.loc[consumo_med_df["PATRIMONIO"] == "15134"])
+
     # Valores default para preenchimento de faltas (observa-se 'INSUMO ' com espaço à direita)
-    fill_values = {'INSUMO ': "COPO", 'CONSUMO': 0, 'SEMANAS':1 ,'CAPACIDADE':1, 'MAQUINAS':"-", 'NIVEL_REPOSICAO':0 , 'CONSUMO_SEMANAL': 0} # Aplicando fillna com dicionário
+    fill_values = {'INSUMO': "COPO", 'CONSUMO': 0, 'SEMANAS':1 ,'CAPACIDADE':1, 'MAQUINAS':"-", 'NIVEL_REPOSICAO':0 , 'CONSUMO_SEMANAL': 0} # Aplicando fillna com dicionário
+    visitas_df = visitas_df[visitas_df["CAPACIDADE"].notna()]
     visitas_df = visitas_df.fillna(fill_values)
  
     # 7) Dois modos de calcular FREQ_BASEADO_EM_CONSUMO:
@@ -298,6 +301,7 @@ def main(developer=False, visitas_duplas=False, nivel_reposicao=None,
     else:
         # b) Usando NIVEL_REPOSICAO específico de cada linha
         visitas_df['FREQ_BASEADO_EM_CONSUMO'] = np.ceil(visitas_df['CONSUMO_SEMANAL']/(visitas_df['CAPACIDADE']*(1 - visitas_df['NIVEL_REPOSICAO'])))
+    
 
     # 8) (Opcional) Repasses: divide patrimônio e janelas do parceiro (_A/_B) quando habilitado
     if visitas_duplas:
@@ -310,16 +314,17 @@ def main(developer=False, visitas_duplas=False, nivel_reposicao=None,
                                                                visitas_df['FREQUENCIA_ATUAL'])).astype(int)
 
     # Consolidar por patrimônio pegando o máximo entre insumos (linha -> patrimônio)
-    visitas_df = visitas_df.groupby(['FILIAL', 'PARCEIRO', 'PATRIMONIO', 'FREQUENCIA_ATUAL']).agg({'FREQUENCIA_REPOSICAO':'max'}).reset_index()
+    visitas_df = visitas_df.groupby(['FILIAL', 'PARCEIRO', 'PATRIMONIO']).agg({'FREQUENCIA_REPOSICAO':'max'}).reset_index()
 
     # 10) Aplicar FREQUENCIA_SEMANAL_MINIMA (piso regulatório/operacional por patrimônio)
-    visitas_df = (patrimonios_df[['FILIAL', 'PARCEIRO', 'PATRIMONIO', 'FREQUENCIA_SEMANAL_MINIMA']]
+    visitas_df = (patrimonios_df[['FILIAL', 'PARCEIRO', 'PATRIMONIO', 'FREQUENCIA_SEMANAL_MINIMA', 'FREQUENCIA_ATUAL']]
                 .merge(
                     visitas_df,
                     on=['FILIAL', 'PARCEIRO', 'PATRIMONIO'],
                     how='left')
-                .fillna(0))
-
+                .fillna(0)
+                )
+    
     # 11) Se houver flexibilidade (freq_flex), ajusta o piso mínimo com base na atual
     if freq_flex is not None:
         visitas_df['FREQUENCIA_SEMANAL_MINIMA'] = np.maximum(visitas_df['FREQUENCIA_SEMANAL_MINIMA'], (visitas_df['FREQUENCIA_ATUAL']-freq_flex))
@@ -336,7 +341,7 @@ def main(developer=False, visitas_duplas=False, nivel_reposicao=None,
                       .assign(FREQUENCIA= lambda x: x['FREQUENCIA_PARC'])
                       .drop(columns='FREQUENCIA_PARC'))
         visitas_df["FREQUENCIA"]=visitas_df["FREQUENCIA"].astype(int)
-
+    
     # 14) Renomear colunas para nomenclatura de apresentação (mantém subset de interesse)
     renames = {'FILIAL':'FILIAL', 'PARCEIRO': 'PARCEIRO', 'PATRIMONIO': 'PATRIMONIO', 
                'FREQUENCIA_ATUAL': 'Frequência Atual (visitas/semana)', 'FREQUENCIA_SEMANAL_MINIMA': 'Frequência Mínima (visitas/semana)',
