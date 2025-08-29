@@ -154,7 +154,7 @@ def main(developer=False):
     freq_df['FILIAL'] = freq_df['FILIAL'].astype(str)
     freq_df['PARCEIRO'] = freq_df['PARCEIRO'].apply(std_codes)
     freq_df['PATRIMONIO'] = freq_df['PATRIMONIO'].apply(std_codes)
-    freq_df['FREQUENCIA'] = freq_df['FREQUENCIA'].astype(int)
+    #freq_df['FREQUENCIA'] = freq_df['FREQUENCIA'].astype(int)
 
     # Trazer DIAS_POR_SEMANA e flag de permissão de sábado (ALLOW_SATURDAY)
     freq_df = freq_df.merge(patrimonios_df[['PATRIMONIO', 'DIAS_POR_SEMANA']],
