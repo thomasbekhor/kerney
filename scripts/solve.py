@@ -659,6 +659,7 @@ def main(developer=False, tempo_abastecimento=None, rota_1_pra_1=False,
                                     (grouped_df['PERIODO'] == periodo) &
                                     (grouped_df['SUPERVISOR'] == supervisor)].copy()
                 
+
                 # Dicionários de distância/tempo por POINT_ID (i,j)
                 dist_dict = distance_matrix[distance_matrix['FILIAL'] == filial].set_index(['POINT_ID_I','POINT_ID_J'])['DISTANCE'].to_dict()
                 time_dict = distance_matrix[distance_matrix['FILIAL'] == filial].set_index(['POINT_ID_I','POINT_ID_J'])['DURATION'].to_dict()
@@ -757,6 +758,7 @@ def main(developer=False, tempo_abastecimento=None, rota_1_pra_1=False,
 
         # Remove arcos artificiais para BASE na listagem final de visitas
         result_df = result_df[result_df['PARCEIRO'] != 'BASE'].copy()
+
 
 
     # Quebrando rota principal do modelo 1:1 em subrotas
